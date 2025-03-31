@@ -1,3 +1,6 @@
+
+//Error is an Object in Node.js
+
 class ApiError extends Error{
     constructor(
         statusCode,
