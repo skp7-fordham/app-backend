@@ -2,7 +2,7 @@ import { asyncHandler } from "../utils/asynchandler.js";
 import { ApiError } from "../utils/ApiErrors.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
-import { Apiresponse } from "../utils/Apiresponse.js";
+import  Apiresponse  from "../utils/Apiresponse.js";
 
 const registerUser = asyncHandler( async (req,res) =>{
     const {email,fullname,username,password}=req.body //destructuring req.body object
@@ -12,7 +12,7 @@ const registerUser = asyncHandler( async (req,res) =>{
           throw new ApiError(400,"All fields required")
     }
 
-   const existedUser= User.findOne({
+   const existedUser= await User.findOne({
         $or: [{username},{email}]
     })
 

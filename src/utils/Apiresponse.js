@@ -9,4 +9,4 @@ class Apiresponse{
 
 }
 
-export default Apiresponse
+export  default Apiresponse;
