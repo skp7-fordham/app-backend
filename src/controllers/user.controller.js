@@ -188,16 +188,66 @@ const changePassword = asyncHandler(async (req,res)=>{
 })
 
 const currentuser = asyncHandler(async (req,res)=>{
-    const user=req.user
-    if(!user){
+    const curruser=req.user
+    if(!curruser){
         throw new ApiError(400,"Login required")
     }
 
-    return res.status(200).json(new Apiresponse(200,{user},"User fetched successfully"))
+    return res.status(200).json(new Apiresponse(200,{curruser},"User fetched successfully"))
 
 })
 
+const updateaccount = asyncHandler(async (req,res)=>{
+     const {fullname,email}=req.body
 
-export {registerUser,loginUser,logOutUser,refreshAccessToken,changePassword,currentuser}
+     if(!fullname || !email){
+        throw new ApiError(400,"All fields are required")
+     }
+
+     
+     const user = await User.findByIdAndUpdate(req.user?._id,{$set:{fullname:fullname,email:email}},{new:true}).select("-password")
+     return res.status(200).json(new Apiresponse(200,user,"Updated successfully"))
+})
+
+const userAvatarUpdate = asyncHandler(async (req,res)=>{
+     const localpath=req.file?.path
+     if(!localpath){
+        throw new ApiError(400,"Avatar file missing");
+     }
+
+    const Avatar = await uploadOnCloudinary(localpath)
+    if(!Avatar.url){
+        throw new ApiError(400,"Error while uploading");
+    }
+
+   const user= await User.findByIdAndUpdate(req.user?._id,{$set:{avatar:Avatar.url}},{new:true}).select("-password")
+   return res
+   .status(200)
+   .json(
+      new Apiresponse(200,user,"Success")
+   )
+})
+
+const userCoverimgUpdate = asyncHandler(async (req,res)=>{
+    const localpath=req.file?.path
+    if(!localpath){
+       throw new ApiError(400,"Cover Image file missing");
+    }
+
+   const Coverimg = await uploadOnCloudinary(localpath)
+   if(!Coverimg.url){
+       throw new ApiError(400,"Error while uploading");
+   }
+
+   const user=await User.findByIdAndUpdate(req.user?._id,{$set:{coverimage:Coverimg.url}},{new:true}).select("-password")
+   return res
+   .status(200)
+   .json(
+      new Apiresponse(200,user,"Success")
+   )
+})
+
+
+export {registerUser,loginUser,logOutUser,refreshAccessToken,changePassword,currentuser,updateaccount,userAvatarUpdate,userCoverimgUpdate}
 
 
