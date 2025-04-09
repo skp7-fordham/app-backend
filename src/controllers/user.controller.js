@@ -247,7 +247,113 @@ const userCoverimgUpdate = asyncHandler(async (req,res)=>{
    )
 })
 
+const getUserchannelProfile = asyncHandler(async (req,res)=>{
+      const {username}=req.params
 
-export {registerUser,loginUser,logOutUser,refreshAccessToken,changePassword,currentuser,updateaccount,userAvatarUpdate,userCoverimgUpdate}
+      if(!username?.trim()){
+        throw new ApiError(400,"username is missing")
+      }
+
+     const channel =  await User.aggregate([
+      {
+        $match:{
+            username : username?.toLowerCase()
+        }
+    },
+    {
+        $lookup:{
+            from :"subscriptions",
+            localField:"_id",
+            foreginField:"channel",
+            as:"subscribers"
+        }
+    },
+    {
+        $lookup:{
+            from :"subscriptions",
+            localField:"_id",
+            foreginField:"subscriber",
+            as:"subscribedTo"
+        }
+    },
+    {
+        $addFields:{
+            subscribersCount:{
+                $size:"$subscribers"
+            },
+            channelsSubscribedCount:{
+                $size:"$subscribedTo"
+            },
+            isSubscribed:{
+                $cond:{
+                    if:{$in:[req.user?._id,"$subscribers.subscriber"]},
+                    then:true,
+                    else:false
+                }
+            }
+        }
+    },
+    {
+        $project:{
+            fullname:1,
+            username:1,
+            subscribersCount:1,
+            channelsSubscribedCount:1,
+            isSubscribed:1,
+            avatar:1,
+            coverimage:1,
+            email:1
+        }
+    }
+])
+
+if(!channel?.length){
+    throw new ApiError(400,"channel does not exist")
+}
+
+   return res.status(200).json(new Apiresponse(200,channel[0],"channel fetched successfully"))
+})
+
+const getWatchHisotry = asyncHandler(async (req,res)=>{
+    const user = await User.aggregate([
+        {
+            $match:{
+                _id: new mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {
+            $lookup:{
+                from :"videos",
+                localField:"watchhistory",
+                foreignField:"_id",
+                as:"watchhistory",
+                pipeline:[
+                    {
+                        $lookup:{
+                            from:"users",
+                            localField:"owner",
+                            foreignField:"_id",
+                            as:"owner",
+                            pipeline:[
+                                {
+                                    $project:{
+                                        fullname:1,
+                                        avatar:1,
+                                        username:1
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+
+    return res.status(200).json(new Apiresponse(200,user[0].watchhistory,"Watch Histroy fetched successfully"))
+})
+
+
+export {registerUser,loginUser,logOutUser,refreshAccessToken,changePassword,currentuser,updateaccount,userAvatarUpdate,userCoverimgUpdate,getUserchannelProfile,getWatchHisotry}
 
 
